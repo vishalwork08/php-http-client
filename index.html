@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="assets/style.css" />
+    <title>HTTP Client</title>
+  </head>
+  <body>
+    <header>
+      <form method="" action="javascript:fetchResponse()">
+        <select name="method" id="method">
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+          <option value="PUT">PUT</option>
+          <option value="PATCH">PATCH</option>
+          <option value="DELETE">DELETE</option>
+          <option value="HEAD">HEAD</option>
+          <option value="CONNECT">CONNECT</option>
+          <option value="OPTIONS">OPTIONS</option>
+          <option value="TRACE">TRACE</option>
+        </select>
+        <input type="text" name="url" id="url" value="https://reqres.in/api/users/" placeholder="URL" />
+        <button type="submit">Send Request</button>
+      </form>
+    </header>
+
+    <!-- <hr class="separator" /> -->
+
+    <div class="extra-options">
+      <div class="options-header">
+        <div class="options-section-heading">Request Header(s)</div>
+        <small>separate rows by new lines</small>
+        <textarea placeholder="//separate rows by new lines i.e.
+
+Content-Type: application/json
+Accept: application/json" id="requestHeader"></textarea
+        >
+      </div>
+      <div class="options-data">
+        <div class="options-section-heading">Request Payload</div>
+        <small>JSON payload only</small>
+        <textarea placeholder="JSON payload" id="requestPayload"></textarea>
+      </div>
+    </div>
+
+    <div class="response" id="response" style="display: none">
+      <hr class="separator" />
+      <div class="response-code" id="response-code"></div>
+      <div class="response-section">
+        <div class="response-heading">Response Header(s)</div>
+        <div class="response-data" id="response-headers"></div>
+      </div>
+      <div class="response-section">
+        <div class="response-heading">Response</div>
+        <div class="response-data" id="response-data"></div>
+      </div>
+    </div>
+  </body>
+</html>
+
+<script>
+  async function fetchResponse() {
+    let responseElement = document.getElementById("response");
+    let responseCodeElement = document.getElementById("response-code");
+    let responseHeaderElement = document.getElementById("response-headers");
+    let responseDataElement = document.getElementById("response-data");
+
+    responseCodeElement.innerHTML = "";
+    responseHeaderElement.innerHTML = "";
+    responseDataElement.innerHTML = "";
+
+    responseElement.style.display = "none" ? "block" : "block";
+    responseElement.style.opacity = ".3";
+
+    let myBody = {
+      "method": document.getElementById("method").value,
+      "url": document.getElementById("url").value,
+      "requestHeader": document.getElementById("requestHeader").value,
+      "requestPayload": document.getElementById("requestPayload").value,
+    };
+
+    let thisURL = "backend/api.php";
+    fetch(thisURL, {
+      method: "POST",
+      body: JSON.stringify(myBody),
+    })
+      .then(async (response) => {
+        const isJson = async (response) => {
+          try {
+            JSON.parse(response);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        };
+
+        const data = isJson ? await response.json() : response;
+
+        responseCodeElement.innerHTML = `Response Code ${response.status}`;
+        responseHeaderElement.innerHTML = response.headers; //JSON.stringify(response.headers);
+
+        // fetch and show response headers
+        let responseHeadersFormatted = "";
+        response.headers.forEach((headerVal, headerKey) => {
+          responseHeadersFormatted += `${headerKey}: ${headerVal}\n`;
+        });
+        responseHeaderElement.innerHTML =
+          "<pre>" + responseHeadersFormatted + "</pre>";
+
+        // thrown error if response is negative
+        /*if (!response.ok) {
+          const error = (data && data.message) || response.status;
+          return Promise.reject(error);
+        }*/
+
+        // responseDataElement.innerHTML = '<pre>'+JSON.stringify(data, null, 2)+'</pre>';
+        responseDataElement.innerHTML = isJson
+          ? "<pre>" + JSON.stringify(data, null, 2) + "</pre>"
+          : `<pre>${data}</pre>`;
+
+        responseElement.style.opacity = "1";
+      })
+      .catch((error) => {
+        responseCodeElement.innerHTML = `Response Code 500`; // default 500 incase it's a server error
+        responseDataElement.innerHTML = `Error: ${error}`;
+        console.error("Error: ", error);
+        responseElement.style.opacity = "1";
+      });
+  }
+</script>
